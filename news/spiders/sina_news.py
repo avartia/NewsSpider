@@ -6,7 +6,6 @@ from news.items import NewsItem
 
 
 class SinaNewsSpider(scrapy.Spider):
-    # 凤凰新闻网
     name = "sina-news"
     allowed_domains = ['news.sina.com.cn']
     start_urls = [
@@ -17,7 +16,7 @@ class SinaNewsSpider(scrapy.Spider):
         item = response.meta['item']
         item['title'] = response.xpath('//div[@class="page-header"]/h1[@id="artibodyTitle"]/text()').extract_first()
         page_info = response.xpath('//div[@class="page-info"]')
-        item['time'] = page_info.xpath('.//span[@class="time-source"]/text()').extract_first()
+        item['time'] = page_info.xpath('.//span[@class="time-source"]/text()').extract_first().strip()
         item['category'] = "main"
         src = page_info.xpath('.//span[@class="time-source"]/span/span/a/text()').extract_first()
         url = page_info.xpath('.//span[@class="time-source"]/span/span/a/@href').extract_first()
@@ -27,6 +26,7 @@ class SinaNewsSpider(scrapy.Spider):
             item['src'] = src
             item['url'] = url
         content = " ".join(response.xpath('//div[@id="artibody"]/node()').extract())
+        content = content.replace("max-width: 500px", "max-width: 100%")
         if "J_Play" not in content:
             item['content'] = content
         yield item
@@ -37,7 +37,7 @@ class SinaNewsSpider(scrapy.Spider):
                    + main_part.xpath(".//p[@data-client='headline']/a/@href").extract() \
                    + main_part.xpath(".//li/a/@href").extract()
         for href in page_url:
-            if not href.startswith(self.start_urls[0]):
+            if not (href.startswith(self.start_urls[0]) and (href.endswith("html") or href.endswith("htm"))):
                 continue
             item = NewsItem()
             item['url'] = href

@@ -11,7 +11,8 @@ from news.items import NewsItem
 from scrapy import log
 import re
 
-cater_dict = {"main": 0}
+category_dict = {"main": 0, "finance": 1, "sports": 2, "science": 3, "entertainment": 4, "education": 5}
+
 
 class NewsPipeline(object):
     def __init__(self):
@@ -37,14 +38,14 @@ class NewsPipeline(object):
                     item['time'] = item['time'].strip('\t\n')
                     if item['time'].count(':') == 1:
                         item['time'] += ':00'
-                    r = re.compile("\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
+                    r = re.compile("\d{4}-\d{2}-\d{2}[ \t]+\d{2}:\d{2}:\d{2}")
                     if not r.match(item['time']):
                         raise Exception("wrong datetime format!")
-                    self.cursor.execute("select * from news where url = %s", (item['url']))
+                    self.cursor.execute("select * from news where url = %s and time = %s", (item['url'], item['time']))
                     ret = self.cursor.fetchone()
                     if ret is None:
                         insert_sql = "insert into news (time, src, url, category, title, content) VALUES ('%s', '%s', '%s', %s, '%s', '%s')"\
-                            %(item['time'], item['src'], item['url'], cater_dict.get(item['category'], 0), item['title'],item['content'])
+                            %(item['time'], item['src'], item['url'], category_dict.get(item['category'], 0), item['title'], item['content'])
                         self.cursor.execute(insert_sql)
                         self.connect.commit()
                 except Exception as error:
